@@ -12,6 +12,8 @@
 if (!defined('_PS_VERSION_')) {
     exit;
 }
+// Incluir el modelo de datos de forma limpia en PrestaShop 1.7
+include_once dirname(__FILE__) . '/classes/ProductBadgeModel.php';
 
 class ProductBadges extends Module
 {
