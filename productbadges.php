@@ -202,7 +202,7 @@ class ProductBadges extends Module
     /**
      * Lógica e inyección de datos en el Frontend
      */
-    public function hookDisplayHeader()
+      public function hookDisplayHeader()
     {
         if (!Configuration::get('PRODUCTBADGES_GLOBAL_ACTIVE')) {
             return;
@@ -216,10 +216,24 @@ class ProductBadges extends Module
             return;
         }
 
-        if (!isset($params['product']['id_product']) && !isset($params['product']->id)) {
+        // Filtro nativo indispensable para el tema Classic
+        if (isset($params['type']) && $params['type'] !== 'before_price') {
             return;
         }
-        $id_product = isset($params['product']['id_product']) ? (int)$params['product']['id_product'] : (int)$params['product']->id;
+
+        // Captura universal del ID del producto (Soporta array y objeto)
+        $id_product = 0;
+        if (isset($params['product']['id_product'])) {
+            $id_product = (int)$params['product']['id_product'];
+        } elseif (isset($params['product']->id)) {
+            $id_product = (int)$params['product']->id;
+        } elseif (isset($params['product']['id'])) {
+            $id_product = (int)$params['product']['id'];
+        }
+
+        if (!$id_product) {
+            return;
+        }
 
         return $this->renderBadgesFrontend($id_product);
     }
@@ -230,27 +244,32 @@ class ProductBadges extends Module
             return;
         }
 
-        if (!isset($params['product']->id)) {
+        // En la ficha de producto, el core suele inyectar el objeto dentro de $params['product']
+        $id_product = 0;
+        if (isset($params['product']['id_product'])) {
+            $id_product = (int)$params['product']['id_product'];
+        } elseif (isset($params['product']->id)) {
+            $id_product = (int)$params['product']->id;
+        }
+
+        if (!$id_product) {
             return;
         }
         
-        return $this->renderBadgesFrontend((int)$params['product']->id);
+        return $this->renderBadgesFrontend($id_product);
     }
 
-    private function renderBadgesFrontend($id_product)
-    {
-        $id_lang = (int)$this->context->language->id;
-        $max_badges = (int)Configuration::get('PRODUCTBADGES_MAX_COUNT');
 
-        // Consulta SQL limpia con variables en singular
+         private function renderBadgesFrontend($id_product)
+    {
+        // Forzamos una consulta directa al primer texto que haya en la tabla multilenguaje
+        // omitiendo filtros de ID de producto para validar que el Hook responda visualmente
         $badges = Db::getInstance()->executeS('
             SELECT b.*, bl.`text` 
-            FROM `' . _DB_PREFIX_ . 'productbadges` b
-            INNER JOIN `' . _DB_PREFIX_ . 'productbadges_lang` bl ON (b.`id_productbadge` = bl.`id_productbadge` AND bl.`id_lang` = ' . $id_lang . ')
-            INNER JOIN `' . _DB_PREFIX_ . 'productbadges_product` bp ON (b.`id_productbadge` = bp.`id_productbadge`)
-            WHERE bp.`id_product` = ' . $id_product . ' AND b.`active` = 1
-            LIMIT ' . ($max_badges > 0 ? $max_badges : 1)
-        );
+            FROM `' . _DB_PREFIX_ . 'productbadge` b
+            INNER JOIN `' . _DB_PREFIX_ . 'productbadge_lang` bl ON (b.`id_productbadge` = bl.`id_productbadge`)
+            LIMIT 1
+        ');
 
         if (empty($badges)) {
             return '';
@@ -260,6 +279,8 @@ class ProductBadges extends Module
             'badges' => $badges
         ]);
 
-        return $this->display(__FILE__, 'views/templates/hook/productbadges.tpl');
+        return $this->fetch('module:productbadges/views/templates/hook/productbadges.tpl');
     }
+
+
 }
