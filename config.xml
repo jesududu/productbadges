@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+    <name>productbadges</name>
+    <displayName><![CDATA[Gestor de Etiquetas de Producto]]></displayName>
+    <version><![CDATA]></version>
+    <description><![CDATA[Módulo para gestionar etiquetas visuales reutilizables para los productos del catálogo.]]></description>
+    <author><![CDATA[Tu Nombre]]></author>
+    <tab><![CDATA[front_office_features]]></tab>
+    <is_configurable>1</is_configurable>
+    <need_instance>0</need_instance>
+    <limited_countries></limited_countries>
+</module>
