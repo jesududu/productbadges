@@ -12,7 +12,8 @@
 if (!defined('_PS_VERSION_')) {
     exit;
 }
-// Incluir el modelo de datos de forma limpia en PrestaShop 1.7
+
+// Inclusión nativa del modelo de datos para persistencia multilenguaje
 include_once dirname(__FILE__) . '/classes/ProductBadgeModel.php';
 
 class ProductBadges extends Module
@@ -29,7 +30,7 @@ class ProductBadges extends Module
         $this->name = 'productbadges';
         $this->tab = 'front_office_features';
         $this->version = '1.0.0';
-        $this->author = 'Tu Nombre';
+        $this->author = 'Jesús Bueno';
         $this->need_instance = 0;
         $this->bootstrap = true; // Requisito explícito de la prueba
 
@@ -42,12 +43,12 @@ class ProductBadges extends Module
 
     public function install()
     {
-        // Comprobar multitienda (Requisito funcional de la prueba)
+        // Soporte multitienda integrado de forma nativa
         if (Shop::isFeatureActive()) {
             Shop::setContext(Shop::CONTEXT_ALL);
         }
 
-        // Cargar scripts SQL de instalación
+        // Ejecución del script SQL de creación de tablas
         include_once(dirname(__FILE__) . '/sql/install.php');
 
         return parent::install()
@@ -58,7 +59,7 @@ class ProductBadges extends Module
 
     public function uninstall()
     {
-        // Cargar scripts SQL de desinstalación limpia
+        // Ejecución del script SQL de borrado limpio (sin tablas huérfanas)
         include_once(dirname(__FILE__) . '/sql/uninstall.php');
 
         return parent::uninstall()
@@ -68,15 +69,13 @@ class ProductBadges extends Module
 
     private function registerHooks()
     {
-        // Registramos los ganchos visuales solicitados
-        return $this->registerHook('displayHeader') // Para cargar CSS de las badges
-            && $this->registerHook('displayProductPriceBlock') // Para listados, home y búsqueda
-            && $this->registerHook('displayProductAdditionalInfo'); // Para la ficha de producto
+        return $this->registerHook('displayHeader')
+            && $this->registerHook('displayProductPriceBlock')
+            && $this->registerHook('displayProductAdditionalInfo');
     }
 
     private function installConfiguration()
     {
-        // Valores iniciales por defecto en la tabla de configuración
         return Configuration::updateValue('PRODUCTBADGES_GLOBAL_ACTIVE', 1)
             && Configuration::updateValue('PRODUCTBADGES_SHOW_LIST', 1)
             && Configuration::updateValue('PRODUCTBADGES_SHOW_PRODUCT', 1)
@@ -93,12 +92,174 @@ class ProductBadges extends Module
 
     private function installTab()
     {
-        // Aquí registraremos la pestaña del menú administrativo en el siguiente paso
-        return true;
+        $tab = new Tab();
+        $tab->active = 1;
+        $tab->class_name = 'AdminProductBadges';
+        $tab->name = array();
+        
+        foreach (Language::getLanguages(true) as $lang) {
+            $tab->name[$lang['id_lang']] = $this->l('Etiquetas de Productos');
+        }
+        
+        $tab->id_parent = (int)Tab::getIdFromClassName('AdminCatalog');
+        $tab->module = $this->name;
+        
+        return $tab->add();
     }
 
     private function uninstallTab()
     {
+        $id_tab = (int)Tab::getIdFromClassName('AdminProductBadges');
+        if ($id_tab) {
+            $tab = new Tab($id_tab);
+            return $tab->delete();
+        }
         return true;
+    }
+
+    /**
+     * Gestión del panel de configuración global del módulo
+     */
+    public function getContent()
+    {
+        $output = '';
+
+        if (Tools::isSubmit('submitProductBadgesConfig')) {
+            Configuration::updateValue('PRODUCTBADGES_GLOBAL_ACTIVE', (int)Tools::getValue('PRODUCTBADGES_GLOBAL_ACTIVE'));
+            Configuration::updateValue('PRODUCTBADGES_SHOW_LIST', (int)Tools::getValue('PRODUCTBADGES_SHOW_LIST'));
+            Configuration::updateValue('PRODUCTBADGES_SHOW_PRODUCT', (int)Tools::getValue('PRODUCTBADGES_SHOW_PRODUCT'));
+            Configuration::updateValue('PRODUCTBADGES_MAX_COUNT', (int)Tools::getValue('PRODUCTBADGES_MAX_COUNT'));
+
+            $output .= $this->displayConfirmation($this->l('Configuración guardada correctamente.'));
+        }
+
+        return $output . $this->renderConfigForm();
+    }
+
+    protected function renderConfigForm()
+    {
+        $helper = new HelperForm();
+        $helper->show_toolbar = false;
+        $helper->table = $this->table;
+        $helper->module = $this;
+        $helper->default_form_language = $this->context->language->id;
+        $helper->identifier = $this->identifier;
+        $helper->submit_action = 'submitProductBadgesConfig';
+        $helper->currentIndex = $this->context->link->getAdminLink('AdminModules', false) . '&configure=' . $this->name;
+        $helper->token = Tools::getAdminTokenLite('AdminModules');
+
+        $helper->fields_value['PRODUCTBADGES_GLOBAL_ACTIVE'] = Configuration::get('PRODUCTBADGES_GLOBAL_ACTIVE');
+        $helper->fields_value['PRODUCTBADGES_SHOW_LIST'] = Configuration::get('PRODUCTBADGES_SHOW_LIST');
+        $helper->fields_value['PRODUCTBADGES_SHOW_PRODUCT'] = Configuration::get('PRODUCTBADGES_SHOW_PRODUCT');
+        $helper->fields_value['PRODUCTBADGES_MAX_COUNT'] = Configuration::get('PRODUCTBADGES_MAX_COUNT');
+
+        $fields_form = [
+            'form' => [
+                'legend' => [
+                    'title' => $this->l('Ajustes Generales de las Etiquetas'),
+                    'icon' => 'icon-cogs'
+                ],
+                'input' => [
+                    [
+                        'type' => 'switch',
+                        'label' => $this->l('Activar módulo globalmente'),
+                        'name' => 'PRODUCTBADGES_GLOBAL_ACTIVE',
+                        'is_bool' => true,
+                        'values' => [['id' => 'active_on', 'value' => 1], ['id' => 'active_off', 'value' => 0]]
+                    ],
+                    [
+                        'type' => 'switch',
+                        'label' => $this->l('Mostrar en listados de categorías y búsquedas'),
+                        'name' => 'PRODUCTBADGES_SHOW_LIST',
+                        'is_bool' => true,
+                        'values' => [['id' => 'active_on', 'value' => 1], ['id' => 'active_off', 'value' => 0]]
+                    ],
+                    [
+                        'type' => 'switch',
+                        'label' => $this->l('Mostrar en la ficha del producto'),
+                        'name' => 'PRODUCTBADGES_SHOW_PRODUCT',
+                        'is_bool' => true,
+                        'values' => [['id' => 'active_on', 'value' => 1], ['id' => 'active_off', 'value' => 0]]
+                    ],
+                    [
+                        'type' => 'text',
+                        'label' => $this->l('Número máximo de etiquetas visibles por producto'),
+                        'name' => 'PRODUCTBADGES_MAX_COUNT',
+                        'class' => 'fixed-width-sm',
+                        'required' => true,
+                    ]
+                ],
+                'submit' => [
+                    'title' => $this->l('Guardar Ajustes'),
+                    'class' => 'btn btn-default pull-right'
+                ]
+            ]
+        ];
+
+        return $helper->generateForm([$fields_form]);
+    }
+
+    /**
+     * Lógica e inyección de datos en el Frontend
+     */
+    public function hookDisplayHeader()
+    {
+        if (!Configuration::get('PRODUCTBADGES_GLOBAL_ACTIVE')) {
+            return;
+        }
+        $this->context->controller->addCSS($this->_path . 'views/css/productbadges.css', 'all');
+    }
+
+    public function hookDisplayProductPriceBlock($params)
+    {
+        if (!Configuration::get('PRODUCTBADGES_GLOBAL_ACTIVE') || !Configuration::get('PRODUCTBADGES_SHOW_LIST')) {
+            return;
+        }
+
+        if (!isset($params['product']['id_product']) && !isset($params['product']->id)) {
+            return;
+        }
+        $id_product = isset($params['product']['id_product']) ? (int)$params['product']['id_product'] : (int)$params['product']->id;
+
+        return $this->renderBadgesFrontend($id_product);
+    }
+
+    public function hookDisplayProductAdditionalInfo($params)
+    {
+        if (!Configuration::get('PRODUCTBADGES_GLOBAL_ACTIVE') || !Configuration::get('PRODUCTBADGES_SHOW_PRODUCT')) {
+            return;
+        }
+
+        if (!isset($params['product']->id)) {
+            return;
+        }
+        
+        return $this->renderBadgesFrontend((int)$params['product']->id);
+    }
+
+    private function renderBadgesFrontend($id_product)
+    {
+        $id_lang = (int)$this->context->language->id;
+        $max_badges = (int)Configuration::get('PRODUCTBADGES_MAX_COUNT');
+
+        // Consulta SQL limpia con variables en singular
+        $badges = Db::getInstance()->executeS('
+            SELECT b.*, bl.`text` 
+            FROM `' . _DB_PREFIX_ . 'productbadges` b
+            INNER JOIN `' . _DB_PREFIX_ . 'productbadges_lang` bl ON (b.`id_productbadge` = bl.`id_productbadge` AND bl.`id_lang` = ' . $id_lang . ')
+            INNER JOIN `' . _DB_PREFIX_ . 'productbadges_product` bp ON (b.`id_productbadge` = bp.`id_productbadge`)
+            WHERE bp.`id_product` = ' . $id_product . ' AND b.`active` = 1
+            LIMIT ' . ($max_badges > 0 ? $max_badges : 1)
+        );
+
+        if (empty($badges)) {
+            return '';
+        }
+
+        $this->context->smarty->assign([
+            'badges' => $badges
+        ]);
+
+        return $this->display(__FILE__, 'views/templates/hook/productbadges.tpl');
     }
 }

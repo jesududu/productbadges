@@ -9,7 +9,7 @@ if (!defined('_PS_VERSION_')) {
 $sql = array();
 
 // 1. Tabla principal de la etiqueta
-$sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'productbadges` (
+$sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'productbadge` (
     `id_productbadge` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
     `color_bg` VARCHAR(7) NOT NULL DEFAULT "#000000",
     `color_text` VARCHAR(7) NOT NULL DEFAULT "#FFFFFF",
@@ -21,7 +21,7 @@ $sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'productbadges` (
 ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4;';
 
 // 2. Tabla multilenguaje (Traducciones del texto)
-$sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'productbadges_lang` (
+$sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'productbadge_lang` (
     `id_productbadge` INT(11) UNSIGNED NOT NULL,
     `id_lang` INT(11) UNSIGNED NOT NULL,
     `text` VARCHAR(255) NOT NULL,
@@ -29,7 +29,7 @@ $sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'productbadges_lang` (
 ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4;';
 
 // 3. Tabla intermedia Muchos a Muchos con productos
-$sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'productbadges_product` (
+$sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'productbadge_product` (
     `id_productbadge` INT(11) UNSIGNED NOT NULL,
     `id_product` INT(11) UNSIGNED NOT NULL,
     PRIMARY KEY (`id_productbadge`, `id_product`),

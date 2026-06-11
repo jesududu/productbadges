@@ -7,9 +7,9 @@ if (!defined('_PS_VERSION_')) {
 }
 
 $sql = array(
-    'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'productbadges`',
-    'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'productbadges_lang`',
-    'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'productbadges_product`'
+    'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'productbadge`',
+    'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'productbadge_lang`',
+    'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'productbadge_product`'
 );
 
 foreach ($sql as $query) {

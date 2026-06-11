@@ -15,7 +15,7 @@ class ProductBadgeModel extends ObjectModel
     public $text;
 
     public static $definition = array(
-        'table' => 'productbadges',
+        'table' => 'productbadge',
         'primary' => 'id_productbadge',
         'multilang' => true,
         'fields' => array(

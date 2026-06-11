@@ -7,7 +7,7 @@ class AdminProductBadgesController extends ModuleAdminController
 {
     public function __construct()
     {
-        $this->table = 'productbadges';
+        $this->table = 'productbadge';
         $this->className = 'ProductBadgeModel'; // Vinculado al ObjectModel
         $this->lang = true; // Multilenguaje activo
         $this->bootstrap = true;

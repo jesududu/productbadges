@@ -1,0 +1,32 @@
+.product-badges-container {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 0 10px;
+}
+
+.badge-item {
+    font-size: 11px;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    display: inline-block;
+    max-width: max-content;
+}
+
+/* Posiciones dinámicas controladas por el administrador */
+.badge-position-top-left {
+    align-self: flex-start;
+}
+
+.badge-position-top-right {
+    align-self: flex-end;
+}
